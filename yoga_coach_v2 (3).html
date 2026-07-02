@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Yoga Coach</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #1c2330;
+    --border:    #30363d;
+    --accent:    #7ee8a2;
+    --accent2:   #56d08a;
+    --warn:      #f0a05a;
+    --danger:    #f85149;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --radius:    12px;
+    --font-head: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* HEADER */
+  header {
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+  .logo {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); font-weight: 400; }
+  #status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    margin-right: 8px;
+    transition: background 0.3s;
+  }
+  #status-dot.ready   { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  #status-dot.loading { background: var(--warn); }
+  #status-text { font-size: 13px; color: var(--muted); }
+
+  /* MAIN LAYOUT */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    padding: 20px 32px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* CAMERA PANEL */
+  .camera-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    aspect-ratio: 4/3;
+  }
+  #video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1);
+  }
+  #canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    transform: scaleX(-1);
+  }
+  .camera-overlay {
+    position: absolute;
+    bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary {
+    background: var(--accent);
+    color: #0d1117;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: var(--accent2); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* POSE SELECTOR */
+  .pose-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pose-btn {
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .pose-btn:hover  { border-color: var(--accent); color: var(--accent); }
+  .pose-btn.active {
+    border-color: var(--accent);
+    background: rgba(126,232,162,0.1);
+    color: var(--accent);
+  }
+
+  /* ── ONE-AT-A-TIME COACH CARD ── */
+  .coach-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* step counter row */
+  .step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .step-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .step-counter {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .step-counter span {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* big instruction box */
+  .instruction-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.3s;
+  }
+  .instruction-box.ok     { border-color: rgba(126,232,162,0.4); background: rgba(126,232,162,0.06); }
+  .instruction-box.warn   { border-color: rgba(240,160,90,0.4);  background: rgba(240,160,90,0.06); }
+  .instruction-box.idle   { border-color: var(--border); }
+
+  .instr-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+  }
+  .instr-text {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .instr-text.ok   { color: var(--accent); }
+  .instr-text.warn { color: var(--warn); }
+  .instr-text.idle { color: var(--muted); }
+
+  /* confirm-hold progress bar — fills while a correction is being verified */
+  .confirm-bar-wrap {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .confirm-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--warn);
+    border-radius: 3px;
+    transition: width 0.12s linear, background 0.3s;
+  }
+  .confirm-bar.pose-hold { background: var(--accent); }
+
+  /* progress dots */
+  .progress-dots {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s, transform 0.2s;
+    flex-shrink: 0;
+  }
+  .dot.done    { background: var(--accent); }
+  .dot.current { background: var(--warn); transform: scale(1.4); }
+  .dot.todo    { background: var(--border); }
+
+  /* queue preview — next joints to fix */
+  .queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .queue-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--surface2);
+    opacity: 0.6;
+  }
+  .queue-item .q-num {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 16px;
+  }
+
+  /* SCORE RING */
+  .score-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .score-ring {
+    position: relative;
+    width: 72px; height: 72px;
+    flex-shrink: 0;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring circle { fill: none; stroke-width: 5; stroke-linecap: round; }
+  .ring-bg   { stroke: var(--border); }
+  .ring-fill { stroke: var(--accent); transition: stroke-dashoffset 0.4s ease, stroke 0.4s; }
+  #score-num {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head);
+    font-size: 18px; font-weight: 600; color: var(--text);
+  }
+  .score-label { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .score-label strong {
+    display: block; font-size: 22px; color: var(--text);
+    font-family: var(--font-head); font-weight: 600;
+  }
+
+  /* ANGLE ROWS */
+  .angle-rows { display: flex; flex-direction: column; gap: 6px; }
+  .angle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 3px 0;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  .angle-row.current-joint { background: rgba(240,160,90,0.08); padding: 3px 6px; }
+  .angle-name { color: var(--muted); text-transform: capitalize; }
+  .angle-vals { display: flex; gap: 10px; align-items: center; }
+  .angle-cur  { color: var(--text); font-weight: 500; min-width: 44px; text-align: right; }
+  .angle-gt   { color: var(--muted); font-size: 11px; min-width: 44px; text-align: right; }
+  .angle-bar-wrap { width: 60px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .angle-bar  { height: 100%; border-radius: 2px; transition: width 0.2s, background 0.2s; }
+
+  /* BADGES */
+  #fps-badge {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(0,0,0,0.6); color: var(--accent);
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+    border-radius: 6px; backdrop-filter: blur(4px);
+  }
+  #pose-badge {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(0,0,0,0.6); color: var(--text);
+    font-size: 12px; font-weight: 500; padding: 4px 12px;
+    border-radius: 6px; backdrop-filter: blur(4px);
+  }
+
+  /* PERFECT POSE FLASH */
+  @keyframes perfectFlash {
+    0%   { opacity: 0; transform: scale(0.9); }
+    20%  { opacity: 1; transform: scale(1.05); }
+    80%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+  }
+  #perfect-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #perfect-overlay.show {
+    display: flex;
+    animation: perfectFlash 2s ease forwards;
+  }
+  .perfect-badge {
+    background: rgba(126,232,162,0.15);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 14px 32px;
+    font-family: var(--font-head);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+    backdrop-filter: blur(8px);
+  }
+
+  /* SLIDE ANIMATION for instruction change */
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .instr-animate { animation: slideUp 0.25s ease; }
+
+  footer {
+    text-align: center; padding: 14px;
+    font-size: 12px; color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    main { grid-template-columns: 1fr; padding: 12px 16px; }
+    header { padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Yoga<span>Coach</span></div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <button id="voice-btn" title="Toggle voice instructions" style="
+      background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      color:var(--accent);font-size:18px;width:36px;height:36px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;transition:all 0.15s;
+      flex-shrink:0;" onclick="toggleVoice()">&#x1F508;</button>
+    <div style="display:flex;align-items:center">
+      <span id="status-dot"></span>
+      <span id="status-text">Loading model…</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- CAMERA -->
+  <div>
+    <div class="camera-wrap">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="canvas"></canvas>
+      <div id="fps-badge">-- fps</div>
+      <div id="pose-badge">Select a pose</div>
+      <div id="perfect-overlay"><div class="perfect-badge" id="perfect-text">Perfect Pose!</div></div>
+      <div class="camera-overlay">
+        <button class="btn primary" id="start-btn" disabled>Start Camera</button>
+        <button class="btn" id="stop-btn" disabled>Stop</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Score -->
+    <div class="card">
+      <div class="card-title">Pose Score</div>
+      <div class="score-wrap">
+        <div class="score-ring">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle class="ring-bg"   cx="36" cy="36" r="30"/>
+            <circle class="ring-fill" id="ring-fill" cx="36" cy="36" r="30"
+              stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+          </svg>
+          <div id="score-num">0%</div>
+        </div>
+        <div class="score-label">
+          <strong id="score-label-big">--</strong>
+          joints in range
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Flow -->
+    <div class="card" id="session-card">
+      <div class="card-title">Guided Session</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px" id="session-label">Select a pose or start a session</div>
+      <div style="background:var(--border);border-radius:4px;height:6px;margin-bottom:12px;overflow:hidden">
+        <div id="session-progress" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.4s ease"></div>
+      </div>
+      <button class="btn" id="session-btn" style="width:100%;font-size:13px" onclick="sessionActive ? stopSession() : startSession()">Start Session</button>
+    </div>
+
+    <!-- Pose selector -->
+    <div class="card">
+      <div class="card-title">Select Pose</div>
+      <div class="pose-grid" id="pose-grid"></div>
+    </div>
+
+    <!-- ONE-AT-A-TIME COACH -->
+    <div class="coach-card">
+      <div class="step-header">
+        <span class="step-label">Coach Feedback</span>
+        <span class="step-counter">Fix <span id="step-current">0</span> of <span id="step-total">0</span></span>
+      </div>
+
+      <!-- big instruction -->
+      <div class="instruction-box idle" id="instr-box">
+        <div class="instr-icon" id="instr-icon">⬤</div>
+        <div class="instr-text idle" id="instr-text">Select a pose to begin</div>
+      </div>
+
+      <!-- confirm-hold progress (fills while a fix is being verified) -->
+      <div class="confirm-bar-wrap" id="confirm-bar-wrap" style="display:none">
+        <div class="confirm-bar" id="confirm-bar"></div>
+      </div>
+
+      <!-- progress dots -->
+      <div class="progress-dots" id="progress-dots"></div>
+
+      <!-- next up queue (2 items max) -->
+      <div id="queue-wrap" style="display:none">
+        <div class="card-title" style="margin-bottom:8px">Next up</div>
+        <div class="queue-list" id="queue-list"></div>
+      </div>
+    </div>
+
+    <!-- Joint angles detail -->
+    <div class="card">
+      <div class="card-title">Joint Angles <span style="font-size:10px;margin-left:6px;color:var(--muted)">current / target</span></div>
+      <div class="angle-rows" id="angle-rows"></div>
+    </div>
+
+  </div>
+</main>
+
+<footer>Running entirely in your browser — no server, no upload</footer>
+
+<script type="module">
+import {
+  PoseLandmarker,
+  FilesetResolver,
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+// =============================================
+// POSE LIBRARY
+// =============================================
+const POSE_LIBRARY = {
+  dandasana: {
+    name: "Dandasana",
+    emoji: "&#x1F9D8;",
+    description: "Sit on the floor. Keep your legs out in front of you. Sit up straight.",
+    setup: [
+      "Sit down on the floor or mat",
+      "Stretch both legs straight out in front of you",
+      "Sit up tall and lengthen your spine"
+    ],
+    angles: {
+      left_elbow: 178.41, right_elbow: 179.51,
+      left_shoulder: 16.46, right_shoulder: 18.96,
+      left_hip: 179.56, right_hip: 161.07,
+      left_knee: 177.98, right_knee: 157.62,
+      left_ankle: 20.71, right_ankle: 6.52
+    }
+  },
+  plank: {
+    name: "Plank Pose",
+    emoji: "&#x1F4AA;",
+    description: "Get into a push-up position. Keep your body flat like a board.",
+    setup: [
+      "Come onto your hands and toes, facing the floor",
+      "Place your hands under your shoulders",
+      "Keep your body in one straight line from head to heels"
+    ],
+    angles: {
+      left_elbow: 179.85, right_elbow: 178.72,
+      left_shoulder: 60.65, right_shoulder: 62.50,
+      left_hip: 175.70, right_hip: 171.99,
+      left_knee: 179.67, right_knee: 177.55,
+      left_ankle: 123.11, right_ankle: 120.85
+    }
+  },
+  vajrasana: {
+    name: "Vajrasana",
+    emoji: "&#x1F64F;",
+    description: "Kneel down and sit back on your heels. Keep your back straight.",
+    setup: [
+      "Kneel down on the mat",
+      "Bring your knees together and sit back onto your heels",
+      "Keep your back straight and rest your hands on your thighs"
+    ],
+    angles: {
+      left_elbow: 171.78, right_elbow: 174.48,
+      left_shoulder: 16.73, right_shoulder: 22.10,
+      left_hip: 119.42, right_hip: 114.18,
+      left_knee: 44.55, right_knee: 35.76,
+      left_ankle: 175.95, right_ankle: 178.71
+    }
+  },
+  downward_dog: {
+    name: "Downward Dog",
+    emoji: "&#x1F415;",
+    description: "Put your hands and feet on the floor. Push your hips up high. Try to press your heels down.",
+    setup: [
+      "Place your hands and feet on the floor, facing down",
+      "Push your hips up and back to form an upside-down V shape",
+      "Press your heels gently toward the floor"
+    ],
+    angles: {
+      left_elbow: 166.12, right_elbow: 167.41,
+      left_shoulder: 175.98, right_shoulder: 174.84,
+      left_hip: 58.16, right_hip: 61.72,
+      left_knee: 177.36, right_knee: 177.39,
+      left_ankle: 106.70, right_ankle: 113.76
+    }
+  },
+  tree_pose: {
+    name: "Tree Pose",
+    emoji: "&#x1F333;",
+    description: "Stand on one leg. Place your other foot on your inner leg. Raise both arms up.",
+    setup: [
+      "Stand tall on both feet",
+      "Shift your weight onto one leg and place the other foot on your inner leg",
+      "Raise both arms straight up over your head"
+    ],
+    angles: {
+      left_elbow: 46.77, right_elbow: 48.18,
+      left_shoulder: 50.47, right_shoulder: 34.82,
+      left_hip: 168.15, right_hip: 102.77,
+      left_knee: 171.70, right_knee: 24.93,
+      left_ankle: 153.10, right_ankle: 121.29
+    }
+  },
+  baddha_konasana: {
+    name: "Baddha Konasana",
+    emoji: "&#x1F98B;",
+    description: "Sit down. Bring the soles of your feet together. Let your knees fall open to the sides.",
+    setup: [
+      "Sit down on the floor",
+      "Bring the soles of your feet together in front of you",
+      "Let your knees relax open to the sides"
+    ],
+    angles: {
+      left_elbow: 176.88, right_elbow: 174.37,
+      left_shoulder: 5.20, right_shoulder: 4.42,
+      left_hip: 42.68, right_hip: 44.90,
+      left_knee: 16.72, right_knee: 15.42,
+      left_ankle: 160.16, right_ankle: 163.66
+    }
+  }
+};
+
+// =============================================
+// PRIORITY ORDER — fix big structural joints first
+// =============================================
+const PRIORITY = [
+  "left_knee",  "right_knee",
+  "left_hip",   "right_hip",
+  "left_shoulder", "right_shoulder",
+  "left_elbow", "right_elbow",
+  "left_ankle", "right_ankle",
+];
+
+// =============================================
+// PER-JOINT THRESHOLDS
+// =============================================
+const THRESHOLD = {
+  left_elbow:     15,
+  right_elbow:    15,
+  left_shoulder:   8,
+  right_shoulder:  8,
+  left_hip:       15,
+  right_hip:      15,
+  left_knee:      15,
+  right_knee:     15,
+  left_ankle:     12,
+  right_ankle:    12,
+};
+
+// =============================================
+// FEEDBACK MESSAGES
+// =============================================
+function getFeedback(joint, error) {
+  const map = {
+    left_knee:      error < 0 ? "Straighten your left leg" : "Bend your left leg a little",
+    right_knee:     error < 0 ? "Straighten your right leg" : "Bend your right leg a little",
+    left_elbow:     error < 0 ? "Straighten your left arm" : "Bend your left arm a little",
+    right_elbow:    error < 0 ? "Straighten your right arm" : "Bend your right arm a little",
+    left_shoulder:  error < 0 ? "Lift your left arm up more" : "Bring your left arm down a little",
+    right_shoulder: error < 0 ? "Lift your right arm up more" : "Bring your right arm down a little",
+    left_hip:       error < 0 ? "Turn your left hip out a little more" : "Sit up straighter",
+    right_hip:      error < 0 ? "Turn your right hip out a little more" : "Sit up straighter",
+    left_ankle:     error < 0 ? "Pull your left toes up toward you" : "Push your left foot down",
+    right_ankle:    error < 0 ? "Pull your right toes up toward you" : "Push your right foot down",
+  };
+  return map[joint] ?? joint;
+}
+
+// =============================================
+// COMPARE — returns sorted error list
+// =============================================
+function comparePose(gt, current) {
+  const errors = [];
+  for (let i = 0; i < PRIORITY.length; i++) {
+    const joint = PRIORITY[i];
+    if (!(joint in gt) || !(joint in current)) continue;
+    const error  = current[joint] - gt[joint];
+    const thresh = THRESHOLD[joint] ?? 15;
+    if (Math.abs(error) < thresh) continue;
+    errors.push({
+      joint,
+      error,
+      priorityIndex: i,                 // body-logical order: legs/hips before arms before ankles
+      severity: Math.abs(error) / thresh,
+      message: getFeedback(joint, error)
+    });
+  }
+  // Fix base-of-body joints first (legs, hips) before arms/ankles — this stabilizes
+  // the whole pose instead of chasing whichever joint happens to be most "off".
+  // Severity only breaks ties within the same priority tier.
+  errors.sort((a, b) => a.priorityIndex - b.priorityIndex || b.severity - a.severity);
+  return errors;
+}
+
+// =============================================
+// STATE
+// =============================================
+let poseLandmarker = null;
+let running        = false;
+let currentPose    = null;
+let animId         = null;
+let lastTime       = 0;
+let frameCount     = 0;
+let lastInstruction = "";
+let perfectTimer    = null;
+
+// -- Sequential Session --
+const SESSION_SEQUENCE = Object.keys(POSE_LIBRARY);
+let sessionActive      = false;
+let sessionIndex       = 0;
+let ackPhase           = false;
+let ackTimer           = null;
+
+// -- Step-by-step Coach State --
+// The coach gives ONE instruction, waits for the user to fix that joint,
+// praises them, then moves to the next correction.
+let stepCoach = {
+  active:        false,   // step-mode engaged
+  pendingJoint:  null,    // joint currently being corrected
+  praiseTimer:   null,    // timer to clear praise before next step
+  praisePhase:   false,   // currently showing praise
+  fixedJoints:   new Set(),  // joints already corrected this pose
+  holdOkFrames:  0,       // frames joint has been in range (confirmation)
+  poseOkFrames:  0,       // frames entire pose has been perfect
+  setupStep:     0,       // which "getting into position" step we're on
+  setupActive:   false,   // true while walking through setup steps
+  setupTimer:    null,    // timer that advances setup steps
+};
+const JOINT_FIX_FRAMES   = 20;  // frames a single joint must stay fixed
+const POSE_DONE_FRAMES   = 45;  // frames full pose must stay perfect
+const PRAISE_DURATION_MS = 1800;
+
+const PRAISE_WORDS = [
+  "Good job!", "Well done!", "Yes, that's it!", "You got it!",
+  "Nice one!", "Keep it up!", "Looking good!", "That's right!",
+];
+function randomPraise() {
+  return PRAISE_WORDS[Math.floor(Math.random() * PRAISE_WORDS.length)];
+}
+
+// Specific praise tied to the joint that was actually just fixed —
+// reinforces learning better than a generic "Good job!"
+function praiseForJoint(joint) {
+  const name = joint.replace(/_/g, " ");
+  const templates = [
+    `Nice, your ${name} looks great now!`,
+    `Perfect, that ${name} is right where it should be.`,
+    `Great fix — your ${name} is in position.`,
+    `That's it — your ${name} is correct now.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+const ACK_MESSAGES = [
+  { icon: "Good job!", text: "Good job! Get ready for the next pose." },
+  { icon: "Well done!", text: "Well done! Move on to the next one." },
+  { icon: "Yes!", text: "Yes! You did it. Next pose coming up." },
+  { icon: "Nice work!", text: "Nice work! Time for the next pose." },
+  { icon: "Good!", text: "Good! You are doing really well. Next pose now." },
+  { icon: "Great!", text: "Great! Keep going, you are doing well." },
+];
+
+const video      = document.getElementById("video");
+const canvas     = document.getElementById("canvas");
+const ctx        = canvas.getContext("2d");
+const startBtn   = document.getElementById("start-btn");
+const stopBtn    = document.getElementById("stop-btn");
+const statusDot  = document.getElementById("status-dot");
+const statusTxt  = document.getElementById("status-text");
+const fpsBadge   = document.getElementById("fps-badge");
+const poseBadge  = document.getElementById("pose-badge");
+const instrBox   = document.getElementById("instr-box");
+const instrIcon  = document.getElementById("instr-icon");
+const instrText  = document.getElementById("instr-text");
+const dotsWrap   = document.getElementById("progress-dots");
+const confirmBarWrap = document.getElementById("confirm-bar-wrap");
+const confirmBar      = document.getElementById("confirm-bar");
+const queueWrap  = document.getElementById("queue-wrap");
+const queueList  = document.getElementById("queue-list");
+const stepCur    = document.getElementById("step-current");
+const stepTotal  = document.getElementById("step-total");
+const perfectOvl = document.getElementById("perfect-overlay");
+
+// =============================================
+// BUILD POSE BUTTONS
+// =============================================
+const poseGrid = document.getElementById("pose-grid");
+for (const [key, pose] of Object.entries(POSE_LIBRARY)) {
+  const btn = document.createElement("button");
+  btn.className = "pose-btn";
+  btn.dataset.key = key;
+  btn.innerHTML = "<span style=\"font-size:18px\">" + pose.emoji + "</span><br>" + pose.name;
+  btn.title = pose.description;
+  btn.onclick = () => { stopSession(); selectPose(key); };
+  poseGrid.appendChild(btn);
+}
+
+function selectPose(key) {
+  currentPose = key;
+  ackPhase = false;
+  // reset step coach
+  stepCoach.active       = true;
+  stepCoach.pendingJoint = null;
+  stepCoach.praisePhase  = false;
+  stepCoach.fixedJoints  = new Set();
+  stepCoach.holdOkFrames = 0;
+  stepCoach.poseOkFrames = 0;
+  if (stepCoach.praiseTimer) { clearTimeout(stepCoach.praiseTimer); stepCoach.praiseTimer = null; }
+  if (stepCoach.setupTimer) { clearTimeout(stepCoach.setupTimer); stepCoach.setupTimer = null; }
+  document.querySelectorAll(".pose-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.key === key)
+  );
+  poseBadge.textContent = POSE_LIBRARY[key].name;
+  buildAngleRows(POSE_LIBRARY[key].angles);
+  resetCoachUI();
+  hideConfirmBar();
+  runSetup(key);
+}
+
+// =============================================
+// SETUP WALKTHROUGH — step-by-step "getting into the pose"
+// shown before live joint correction begins.
+// =============================================
+function runSetup(key) {
+  const steps = POSE_LIBRARY[key].setup;
+  if (!steps || steps.length === 0) {
+    stepCoach.setupActive = false;
+    setInstruction("idle", "&#x2192;", "idle", POSE_LIBRARY[key].description);
+    speak("Ok, let's try " + POSE_LIBRARY[key].name + ". " + POSE_LIBRARY[key].description, true);
+    return;
+  }
+  stepCoach.setupActive = true;
+  stepCoach.setupStep   = 0;
+  showSetupStep(key, steps);
+}
+
+function showSetupStep(key, steps) {
+  const i = stepCoach.setupStep;
+  if (i >= steps.length) {
+    stepCoach.setupActive = false;
+    setInstruction("idle", "&#x2192;", "idle", "Now hold the pose — I'll watch and guide you.");
+    speak("Now hold the pose. I will watch and guide you.", true);
+    return;
+  }
+  const text = `Step ${i + 1} of ${steps.length}: ${steps[i]}`;
+  setInstruction("idle", "&#x1F539;", "idle", text);
+  speak(steps[i], true);
+  if (stepCoach.setupTimer) clearTimeout(stepCoach.setupTimer);
+  stepCoach.setupTimer = setTimeout(() => {
+    stepCoach.setupStep++;
+    showSetupStep(key, steps);
+  }, 3200);
+}
+
+// =============================================
+// SEQUENTIAL SESSION
+// =============================================
+function startSession() {
+  sessionActive = true;
+  sessionIndex  = 0;
+  stepCoach.holdOkFrames = 0;
+  ackPhase      = false;
+  const btn = document.getElementById("session-btn");
+  if (btn) { btn.textContent = "Stop Session"; btn.classList.add("primary"); }
+  loadSessionPose(0);
+}
+
+function stopSession() {
+  if (!sessionActive) return;
+  sessionActive = false;
+  ackPhase = false;
+  if (ackTimer) { clearTimeout(ackTimer); ackTimer = null; }
+  const btn = document.getElementById("session-btn");
+  if (btn) { btn.textContent = "Start Session"; btn.classList.remove("primary"); }
+  updateSessionProgress();
+}
+
+function loadSessionPose(idx) {
+  // selectPose already resets stepCoach
+  selectPose(SESSION_SEQUENCE[idx]);
+  updateSessionProgress();
+}
+
+function updateSessionProgress() {
+  const bar   = document.getElementById("session-progress");
+  const label = document.getElementById("session-label");
+  if (!bar || !label) return;
+  if (!sessionActive) {
+    bar.style.width = "0%";
+    label.textContent = "Select a pose or start a session";
+    return;
+  }
+  const pct = Math.round((sessionIndex / SESSION_SEQUENCE.length) * 100);
+  bar.style.width = pct + "%";
+  const pose = POSE_LIBRARY[SESSION_SEQUENCE[sessionIndex]];
+  label.textContent = "Pose " + (sessionIndex+1) + " of " + SESSION_SEQUENCE.length + ": " + pose.name;
+}
+
+function advanceSession() {
+  const ackMsg = ACK_MESSAGES[sessionIndex % ACK_MESSAGES.length];
+  ackPhase = true;
+  stepCoach.holdOkFrames = 0;
+  setInstruction("ok", ackMsg.icon, "ok", ackMsg.text);
+  speak(ackMsg.text, true);
+  showPerfect(ackMsg.icon + " " + ackMsg.text);
+  ackTimer = setTimeout(() => {
+    ackPhase = false;
+    sessionIndex++;
+    if (sessionIndex >= SESSION_SEQUENCE.length) {
+      sessionActive = false;
+      setInstruction("ok", "[Trophy]", "ok", "You did it! Great work today. Session is done.");
+      speak("You did it! Great work today. Session is done.", true);
+      const btn = document.getElementById("session-btn");
+      if (btn) { btn.textContent = "Start Session"; btn.classList.remove("primary"); }
+      updateSessionProgress();
+    } else {
+      loadSessionPose(sessionIndex);
+    }
+  }, 3000);
+}
+
+// =============================================
+// LOAD MEDIAPIPE
+// =============================================
+async function loadModel() {
+  statusDot.className = "loading";
+  statusTxt.textContent = "Loading MediaPipe…";
+
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+
+  poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      delegate: "GPU"
+    },
+    runningMode: "VIDEO",
+    numPoses: 1
+  });
+
+  statusDot.className = "ready";
+  statusTxt.textContent = "Model ready";
+  startBtn.disabled = false;
+}
+
+loadModel();
+
+// =============================================
+// CAMERA
+// =============================================
+startBtn.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 1280, height: 720, facingMode: "user" }
+  });
+  video.srcObject = stream;
+  await video.play();
+  running = true;
+  startBtn.disabled = true;
+  stopBtn.disabled  = false;
+  requestAnimationFrame(detectLoop);
+};
+
+stopBtn.onclick = () => {
+  running = false;
+  cancelAnimationFrame(animId);
+  video.srcObject?.getTracks().forEach(t => t.stop());
+  video.srcObject = null;
+  startBtn.disabled = false;
+  stopBtn.disabled  = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+};
+
+// =============================================
+// ANGLE CALCULATION  (same as Python)
+// =============================================
+function calculateAngle(a, b, c) {
+  const radians =
+    Math.atan2(c[1] - b[1], c[0] - b[0]) -
+    Math.atan2(a[1] - b[1], a[0] - b[0]);
+  let angle = Math.abs(radians * 180 / Math.PI);
+  if (angle > 180) angle = 360 - angle;
+  return angle;
+}
+
+function pt(lms, i) { return [lms[i].x, lms[i].y, lms[i].z]; }
+
+// MediaPipe indices:
+// 11=L-shoulder 12=R-shoulder 13=L-elbow 14=R-elbow
+// 15=L-wrist    16=R-wrist    23=L-hip   24=R-hip
+// 25=L-knee     26=R-knee     27=L-ankle 28=R-ankle
+// 31=L-foot     32=R-foot
+function extractAngles(lms) {
+  return {
+    left_elbow:     calculateAngle(pt(lms,11), pt(lms,13), pt(lms,15)),
+    right_elbow:    calculateAngle(pt(lms,12), pt(lms,14), pt(lms,16)),
+    left_shoulder:  calculateAngle(pt(lms,13), pt(lms,11), pt(lms,23)),
+    right_shoulder: calculateAngle(pt(lms,14), pt(lms,12), pt(lms,24)),
+    left_hip:       calculateAngle(pt(lms,11), pt(lms,23), pt(lms,25)),
+    right_hip:      calculateAngle(pt(lms,12), pt(lms,24), pt(lms,26)),
+    left_knee:      calculateAngle(pt(lms,23), pt(lms,25), pt(lms,27)),
+    right_knee:     calculateAngle(pt(lms,24), pt(lms,26), pt(lms,28)),
+    left_ankle:     calculateAngle(pt(lms,25), pt(lms,27), pt(lms,31)),
+    right_ankle:    calculateAngle(pt(lms,26), pt(lms,28), pt(lms,32)),
+  };
+}
+
+// =============================================
+// SKELETON DRAWING
+// — highlights the current problem joint in orange
+// =============================================
+const CONNECTIONS = PoseLandmarker.POSE_CONNECTIONS;
+
+// which landmark indices belong to each joint
+const JOINT_LANDMARKS = {
+  left_elbow:     [11,13,15],
+  right_elbow:    [12,14,16],
+  left_shoulder:  [13,11,23],
+  right_shoulder: [14,12,24],
+  left_hip:       [11,23,25],
+  right_hip:      [12,24,26],
+  left_knee:      [23,25,27],
+  right_knee:     [24,26,28],
+  left_ankle:     [25,27,31],
+  right_ankle:    [26,28,32],
+};
+
+function getVideoCoverTransform() {
+  // Mirror the scale+offset CSS object-fit:cover applies to the video,
+  // so skeleton landmarks map exactly onto the visible body.
+  const cw = canvas.width,  ch = canvas.height;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return { scale: 1, ox: 0, oy: 0 };
+  const scale = Math.max(cw / vw, ch / vh);
+  const ox = (cw - vw * scale) / 2;
+  const oy = (ch - vh * scale) / 2;
+  return { scale, ox, oy };
+}
+
+function lmX(lm, t) { return lm.x * video.videoWidth  * t.scale + t.ox; }
+function lmY(lm, t) { return lm.y * video.videoHeight * t.scale + t.oy; }
+
+function drawSkeleton(landmarks, activeJoint) {
+  const t = getVideoCoverTransform();
+  const highlighted = activeJoint ? new Set(JOINT_LANDMARKS[activeJoint] || []) : new Set();
+
+  for (const conn of CONNECTIONS) {
+    const a = landmarks[conn.start];
+    const b = landmarks[conn.end];
+    if (!a || !b) continue;
+    const isActive = highlighted.has(conn.start) && highlighted.has(conn.end);
+    ctx.beginPath();
+    ctx.moveTo(lmX(a, t), lmY(a, t));
+    ctx.lineTo(lmX(b, t), lmY(b, t));
+    ctx.strokeStyle = isActive ? "rgba(240,160,90,0.95)" : "rgba(126,232,162,0.7)";
+    ctx.lineWidth   = isActive ? 12 : 6;
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < landmarks.length; i++) {
+    const lm = landmarks[i];
+    if (lm.visibility < 0.5) continue;
+    const isActive = highlighted.has(i);
+    ctx.beginPath();
+    ctx.arc(lmX(lm, t), lmY(lm, t), isActive ? 22 : 16, 0, 2 * Math.PI);
+    ctx.fillStyle = isActive ? "#f0a05a" : "#7ee8a2";
+    ctx.fill();
+  }
+}
+
+// =============================================
+// COACH UI — one instruction at a time
+// =============================================
+function resetCoachUI() {
+  lastInstruction = "";
+  stepCoach.active       = false;
+  stepCoach.pendingJoint = null;
+  stepCoach.praisePhase  = false;
+  stepCoach.fixedJoints  = new Set();
+  stepCoach.holdOkFrames = 0;
+  stepCoach.poseOkFrames = 0;
+  stepCoach.setupActive  = false;
+  stepCoach.setupStep    = 0;
+  if (stepCoach.praiseTimer) { clearTimeout(stepCoach.praiseTimer); stepCoach.praiseTimer = null; }
+  if (stepCoach.setupTimer) { clearTimeout(stepCoach.setupTimer); stepCoach.setupTimer = null; }
+  setInstruction("idle", "&#x25CF;", "idle", "Start camera to begin");
+  dotsWrap.innerHTML = "";
+  queueWrap.style.display = "none";
+  stepCur.textContent  = "0";
+  stepTotal.textContent = "0";
+  hideConfirmBar();
+}
+
+// =============================================
+// CONFIRM-HOLD PROGRESS BAR
+// — makes the "waiting for you to hold it" phase visible
+//   instead of silent, so it doesn't look frozen.
+// =============================================
+function showConfirmBar(pct, isPoseHold) {
+  confirmBarWrap.style.display = "block";
+  confirmBar.style.width = Math.min(100, pct) + "%";
+  confirmBar.classList.toggle("pose-hold", !!isPoseHold);
+}
+function hideConfirmBar() {
+  confirmBarWrap.style.display = "none";
+  confirmBar.style.width = "0%";
+}
+
+// =============================================
+// VOICE ENGINE (Web Speech API)
+// =============================================
+let voiceEnabled  = true;
+let lastSpoken    = "";
+let speakTimer    = null;
+const synth       = window.speechSynthesis;
+
+function speak(text, priority) {
+  if (!voiceEnabled) return;
+  if (!text || text === "Start camera to begin" || text === "I cannot see you. Please step into the camera view.") return;
+  // strip HTML entities for clean speech
+  const tmp = document.createElement("div");
+  tmp.innerHTML = text;
+  const clean = tmp.textContent || tmp.innerText || text;
+  if (!priority && clean === lastSpoken) return;
+  lastSpoken = clean;
+
+  if (speakTimer) { clearTimeout(speakTimer); speakTimer = null; }
+  const delay = priority ? 0 : 300;
+  speakTimer = setTimeout(() => {
+    synth.cancel();
+    const utt = new SpeechSynthesisUtterance(clean);
+    utt.rate   = 0.92;
+    utt.pitch  = 1.05;
+    utt.volume = 1;
+    const voices = synth.getVoices();
+    const pref = voices.find(v => /google|samantha|karen|natural|enhanced/i.test(v.name) && v.lang.startsWith("en"));
+    if (pref) utt.voice = pref;
+    synth.speak(utt);
+  }, delay);
+}
+
+function toggleVoice() {
+  voiceEnabled = !voiceEnabled;
+  const btn = document.getElementById("voice-btn");
+  if (btn) btn.innerHTML = voiceEnabled ? "&#x1F508;" : "&#x1F507;";
+  if (!voiceEnabled) synth.cancel();
+  // tiny confirmation
+  if (voiceEnabled) {
+    lastSpoken = "";
+    speak("Voice on", true);
+  }
+}
+
+// pre-load voices (Chrome needs this)
+if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => synth.getVoices();
+
+function setInstruction(boxClass, icon, textClass, message) {
+  // animate only on change
+  if (message === lastInstruction) return;
+  lastInstruction = message;
+  speak(message);
+
+  instrBox.className  = "instruction-box " + boxClass;
+  instrIcon.textContent = icon;
+  instrText.className = "instr-text " + textClass;
+  instrText.textContent = message;
+
+  instrText.classList.remove("instr-animate");
+  void instrText.offsetWidth; // reflow trigger
+  instrText.classList.add("instr-animate");
+}
+
+function updateCoachUI(errors, totalJoints) {
+  const totalErrors = errors.length;
+  const fixedCount  = totalJoints - totalErrors;
+
+  stepTotal.textContent = totalJoints;
+  stepCur.textContent   = fixedCount;
+
+  // rebuild dots
+  dotsWrap.innerHTML = "";
+  for (let i = 0; i < totalJoints; i++) {
+    const d = document.createElement("div");
+    if (i < fixedCount)       d.className = "dot done";
+    else if (i === fixedCount) d.className = "dot current";
+    else                      d.className = "dot todo";
+    dotsWrap.appendChild(d);
+  }
+
+  // ── STILL WALKING THROUGH "GET INTO THE POSE" STEPS ──
+  // Don't give live corrections until the setup walkthrough has finished —
+  // otherwise the user gets confusing joint nags before they've even tried.
+  if (stepCoach.setupActive) {
+    hideConfirmBar();
+    return;
+  }
+
+  // ── STEP-BY-STEP COACH LOGIC ──
+  if (stepCoach.praisePhase) return;  // hold praise on screen
+
+  // ── ALL JOINTS CORRECT ──
+  if (totalErrors === 0) {
+    stepCoach.poseOkFrames++;
+    stepCoach.holdOkFrames = 0;
+    stepCoach.pendingJoint = null;
+
+    if (stepCoach.poseOkFrames === 1) {
+      // first perfect frame — show big "Perfect pose!"
+      setInstruction("ok", "&#x2713;", "ok", "Great! Keep holding that pose.");
+      showPerfect();
+    }
+
+    // visible progress while holding the full pose before the session advances
+    if (sessionActive && !ackPhase) {
+      showConfirmBar((stepCoach.poseOkFrames / POSE_DONE_FRAMES) * 100, true);
+    } else {
+      hideConfirmBar();
+    }
+
+    // after holding full pose → advance session
+    if (sessionActive && !ackPhase && stepCoach.poseOkFrames >= POSE_DONE_FRAMES) {
+      advanceSession();
+    }
+    queueWrap.style.display = "none";
+    return;
+  }
+
+  stepCoach.poseOkFrames = 0;
+
+  // ── BUILD ERROR MAP for quick lookup ──
+  const errorMap = {};
+  for (const e of errors) errorMap[e.joint] = e;
+
+  // ── FAR FROM THE POSE — give holistic guidance, not a single joint nag ──
+  // If most joints are still off, one "straighten your left leg" message
+  // feels disconnected from the bigger picture. Re-show the whole-pose
+  // description instead, and only switch to one-joint-at-a-time once
+  // the user is mostly there.
+  const FAR_THRESHOLD = 0.6; // 60%+ of tracked joints off => "far"
+  if (totalErrors / totalJoints >= FAR_THRESHOLD) {
+    stepCoach.pendingJoint = null;
+    stepCoach.holdOkFrames = 0;
+    hideConfirmBar();
+    const desc = POSE_LIBRARY[currentPose]?.description ?? "Try to match the pose shown.";
+    setInstruction("warn", "&#x21BB;", "warn", desc);
+    queueWrap.style.display = "none";
+    return;
+  }
+
+  // ── CHECK IF PENDING JOINT IS NOW FIXED ──
+  if (stepCoach.pendingJoint && !(stepCoach.pendingJoint in errorMap)) {
+    stepCoach.holdOkFrames++;
+    showConfirmBar((stepCoach.holdOkFrames / JOINT_FIX_FRAMES) * 100, false);
+    if (stepCoach.holdOkFrames >= JOINT_FIX_FRAMES) {
+      // confirmed fixed — praise (naming the joint) and mark done
+      const fixedJoint = stepCoach.pendingJoint;
+      stepCoach.fixedJoints.add(fixedJoint);
+      const praise = praiseForJoint(fixedJoint);
+      stepCoach.praisePhase = true;
+      stepCoach.holdOkFrames = 0;
+      stepCoach.pendingJoint = null;
+      hideConfirmBar();
+      setInstruction("ok", "&#x2713;", "ok", praise);
+      speak(praise, true);
+      showPerfect(praise);
+      queueWrap.style.display = "none";
+      if (stepCoach.praiseTimer) clearTimeout(stepCoach.praiseTimer);
+      stepCoach.praiseTimer = setTimeout(() => {
+        stepCoach.praisePhase = false;
+      }, PRAISE_DURATION_MS);
+    }
+    return;
+  }
+
+  stepCoach.holdOkFrames = 0;
+  hideConfirmBar();
+
+  // ── PICK THE NEXT JOINT TO FIX ──
+  // filter out already-fixed ones; errors is already in body-logical priority order
+  const remaining = errors.filter(e => !stepCoach.fixedJoints.has(e.joint));
+
+  if (remaining.length === 0) {
+    // all known errors were fixed — clear fixed set so pose can be re-evaluated fresh
+    stepCoach.fixedJoints.clear();
+    stepCoach.pendingJoint = null;
+    return;
+  }
+
+  // if no pending joint, or pending joint still has error → assign top priority
+  const top = remaining[0];
+  if (stepCoach.pendingJoint !== top.joint) {
+    stepCoach.pendingJoint = top.joint;
+    setInstruction("warn", "&#x279C;", "warn", top.message);
+    speak(top.message, true);
+  }
+
+  // hide queue — one at a time only
+  queueWrap.style.display = "none";
+}
+
+// =============================================
+// ANGLE ROWS
+// =============================================
+function buildAngleRows(gt) {
+  const container = document.getElementById("angle-rows");
+  container.innerHTML = "";
+  for (const joint of PRIORITY) {
+    if (!(joint in gt)) continue;
+    const row = document.createElement("div");
+    row.className = "angle-row";
+    row.id = "row-" + joint;
+    row.innerHTML = `
+      <span class="angle-name">${joint.replace(/_/g," ")}</span>
+      <div class="angle-vals">
+        <div class="angle-bar-wrap"><div class="angle-bar" id="bar-${joint}"></div></div>
+        <span class="angle-cur" id="cur-${joint}">--°</span>
+        <span class="angle-gt">${gt[joint].toFixed(0)}°</span>
+      </div>`;
+    container.appendChild(row);
+  }
+}
+
+function updateAngleRows(current, gt, activeJoint) {
+  for (const joint of PRIORITY) {
+    if (!(joint in gt)) continue;
+    const curEl = document.getElementById("cur-" + joint);
+    const barEl = document.getElementById("bar-" + joint);
+    const rowEl = document.getElementById("row-" + joint);
+    if (!curEl || !barEl || !rowEl) continue;
+
+    const val    = current[joint];
+    const error  = val - gt[joint];
+    const thresh = THRESHOLD[joint] ?? 15;
+    const ok     = Math.abs(error) < thresh;
+
+    curEl.textContent  = val.toFixed(0) + "°";
+    curEl.style.color  = ok ? "var(--accent)" : "var(--warn)";
+
+    const pct = Math.min(100, (val / 180) * 100);
+    barEl.style.width      = pct + "%";
+    barEl.style.background = ok ? "var(--accent)" : "var(--warn)";
+
+    rowEl.classList.toggle("current-joint", joint === activeJoint);
+  }
+}
+
+function updateScore(current, gt) {
+  const joints  = Object.keys(gt);
+  const inRange = joints.filter(j =>
+    (j in current) && Math.abs(current[j] - gt[j]) < (THRESHOLD[j] ?? 15)
+  ).length;
+
+  const pct    = Math.round((inRange / joints.length) * 100);
+  const circ   = 188.5;
+  const offset = circ - (circ * pct / 100);
+
+  document.getElementById("ring-fill").setAttribute("stroke-dashoffset", offset);
+  document.getElementById("score-num").textContent = pct + "%";
+  document.getElementById("score-label-big").textContent = `${inRange}/${joints.length}`;
+
+  const fill = document.getElementById("ring-fill");
+  fill.style.stroke = pct >= 80 ? "var(--accent)" : pct >= 50 ? "var(--warn)" : "var(--danger)";
+}
+
+// =============================================
+// PERFECT POSE FLASH
+// =============================================
+function showPerfect(msg) {
+  const pt = document.getElementById("perfect-text");
+  if (pt) pt.textContent = msg || "Perfect Pose!";
+  if (perfectTimer) return;
+  perfectOvl.classList.add("show");
+  perfectTimer = setTimeout(() => {
+    perfectOvl.classList.remove("show");
+    perfectTimer = null;
+  }, 2000);
+}
+
+// =============================================
+// FPS
+// =============================================
+function updateFPS(ts) {
+  frameCount++;
+  if (ts - lastTime >= 1000) {
+    fpsBadge.textContent = frameCount + " fps";
+    frameCount = 0;
+    lastTime   = ts;
+  }
+}
+
+// =============================================
+// DETECT LOOP
+// =============================================
+function detectLoop(ts) {
+  if (!running) return;
+  animId = requestAnimationFrame(detectLoop);
+  if (video.readyState < 2) return;
+
+  updateFPS(ts);
+
+  canvas.width  = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const result = poseLandmarker.detectForVideo(video, ts);
+
+  if (!result.landmarks || result.landmarks.length === 0) {
+    setInstruction("idle", "?", "idle", "I cannot see you. Please step into the camera view.");
+    return;
+  }
+
+  const landmarks = result.landmarks[0];
+  const current   = extractAngles(landmarks);
+
+  if (currentPose) {
+    const gt     = POSE_LIBRARY[currentPose].angles;
+    const errors = comparePose(gt, current);
+
+    const activeJoint = errors.length > 0 ? errors[0].joint : null;
+    drawSkeleton(landmarks, activeJoint);
+    updateCoachUI(errors, Object.keys(gt).length);
+    updateAngleRows(current, gt, activeJoint);
+    updateScore(current, gt);
+  } else {
+    drawSkeleton(landmarks, null);
+  }
+}
+</script>
+</body>
+</html>
